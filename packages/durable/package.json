@@ -1,0 +1,45 @@
+{
+	"name": "@teeny.dev/durable",
+	"version": "0.0.8",
+	"type": "module",
+	"sideEffects": false,
+	"scripts": {
+		"postinstall": "patch-package",
+		"build": "tsup",
+		"prepare": "npm run test && npm run build",
+		"test:types": "tsc",
+		"test:vitest": "vitest --run --no-threads",
+		"test": "npm run test:types && npm run test:vitest"
+	},
+	"exports": {
+		".": "./dist/index.js",
+		"./v2": "./dist/v2/index.js"
+	},
+	"files": [
+		"dist",
+		"patches",
+		"src",
+		"README.md",
+		"package.json"
+	],
+	"prettier": "@jman.dev/prettier-config",
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20230814.0",
+		"@jman.dev/prettier-config": "^0.1.7",
+		"@trpc/client": "^10.37.1",
+		"@trpc/server": "^10.37.1",
+		"ky": "^0.33.3",
+		"patch-package": "^8.0.0",
+		"superjson": "^1.13.1",
+		"tsup": "^7.2.0",
+		"typescript": "^5.1.6",
+		"vitest": "^0.34.1",
+		"wrangler": "^3.5.0",
+		"zod": "^3.22.0"
+	},
+	"peerDependencies": {
+		"@cloudflare/workers-types": "^4.20230717.0",
+		"@trpc/client": "^10.35.0",
+		"@trpc/server": "^10.35.0"
+	}
+}

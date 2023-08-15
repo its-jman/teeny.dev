@@ -1,0 +1,10 @@
+{
+  "name": "teeny.dev",
+  "private": true,
+  "devDependencies": {
+    "@tsconfig/node18": "^2.0.1",
+    "@tsconfig/recommended": "^1.0.2",
+    "@tsconfig/strictest": "^2.0.1",
+    "release-it": "^16.1.5"
+  }
+}
