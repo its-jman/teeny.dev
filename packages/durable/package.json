@@ -4,12 +4,12 @@
 	"type": "module",
 	"sideEffects": false,
 	"scripts": {
-		"postinstall": "patch-package",
 		"build": "tsup",
 		"prepare": "npm run test && npm run build",
 		"test:types": "tsc",
 		"test:vitest": "vitest --run --no-threads",
-		"test": "npm run test:types && npm run test:vitest"
+		"test": "npm run test:types && npm run test:vitest",
+		"release": "release-it"
 	},
 	"exports": {
 		".": "./dist/index.js",
@@ -17,7 +17,6 @@
 	},
 	"files": [
 		"dist",
-		"patches",
 		"src",
 		"README.md",
 		"package.json"

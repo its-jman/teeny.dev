@@ -1,6 +1,12 @@
 {
   "name": "teeny.dev",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "postinstall": "patch-package"
+  },
   "devDependencies": {
     "@tsconfig/node18": "^2.0.1",
     "@tsconfig/recommended": "^1.0.2",
