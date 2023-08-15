@@ -22,6 +22,11 @@
 		"package.json"
 	],
 	"prettier": "@jman.dev/prettier-config",
+	"release-it": {
+		"github": {
+			"release": true
+		}
+	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20230814.0",
 		"@jman.dev/prettier-config": "^0.1.7",
