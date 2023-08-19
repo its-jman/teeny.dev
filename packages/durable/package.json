@@ -23,7 +23,12 @@
 	],
 	"prettier": "@jman.dev/prettier-config",
 	"release-it": {
+		"git": {
+			"commitMessage": "teeny-durable@${version}",
+			"tagAnnotation": "teeny-durable@${version}"
+		},
 		"github": {
+			"releaseName": "teeny-durable@${version}",
 			"release": true
 		}
 	},
