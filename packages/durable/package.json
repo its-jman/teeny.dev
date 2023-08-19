@@ -25,7 +25,7 @@
 	"release-it": {
 		"git": {
 			"commitMessage": "teeny-durable@${version}",
-			"tagAnnotation": "teeny-durable@${version}"
+			"tagName": "teeny-durable@${version}"
 		},
 		"github": {
 			"releaseName": "teeny-durable@${version}",
