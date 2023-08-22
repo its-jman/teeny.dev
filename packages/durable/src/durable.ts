@@ -155,7 +155,6 @@ const createTypedStorageItem = <T extends ZodType>(
 		async get(keyOrKeys, opts) {
 			if (typeof keyOrKeys === 'string') {
 				const val = await storage.get<string>(prefix(keyOrKeys), opts)
-				console.log('val', val)
 				if (val === undefined) return val
 				return validator.parse(parse(val)) as any
 			} else {
@@ -170,11 +169,14 @@ const createTypedStorageItem = <T extends ZodType>(
 				return out
 			}
 		},
-		list(opts) {
-			return storage.list({
+		async list(opts) {
+			const items = await storage.list<string>({
 				...opts,
 				prefix: prefix(opts?.prefix ?? ''),
 			})
+			return new Map(
+				[...items.entries()].map(([key, val]) => [key, validator.parse(parse(val))])
+			)
 		},
 		// TODO: idk how to represent this as overloaded...
 		put(...args) {
