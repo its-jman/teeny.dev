@@ -79,8 +79,10 @@ export function createDurable<TEnv, TRouter>(
 
 	return Object.assign(handler, {
 		proxy(ns: DurableObjectNamespace) {
+			const _getStub = ns.get.bind(ns)
+
 			function get(id: DurableObjectId): TeenyDurableStub<Proxied<TRouter>> {
-				const stub = ns.get(id)
+				const stub = _getStub(id)
 				return Object.assign(stub, {
 					rpc: createClientProxy<TRouter>((rpcReq) => {
 						/**
@@ -100,8 +102,10 @@ export function createDurable<TEnv, TRouter>(
 				})
 			}
 
-			return Object.assign({}, ns, {
-				_getStub: ns.get.bind(ns),
+			// @ts-ignore -- Added back in at the assign, overwrite doesn't seem to work correctly (recursing)
+			delete ns.get
+			return Object.assign(ns, {
+				_getStub,
 				get,
 				getByName: (name: string) => {
 					const id = ns.idFromName(name)

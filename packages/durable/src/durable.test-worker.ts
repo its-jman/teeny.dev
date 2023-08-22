@@ -59,7 +59,8 @@ const router = t.router({
 			await stub.rpc.name.set(input.first)
 		}),
 	getFallthrough: t.procedure.query(async ({ctx}) => {
-		const stub = ctx.env.STORAGE.getByName('name')
+		const id = ctx.env.STORAGE.newUniqueId()
+		const stub = ctx.env.STORAGE.getById(id)
 		return await (await stub.fetch('https://_/')).text()
 	}),
 })
