@@ -8,11 +8,4 @@ export default defineConfig({
 	clean: true,
 	dts: true,
 	sourcemap: true,
-
-	/* outExtension({format}) {
-		return {
-			js: format === 'cjs' ? '.cjs' : format === 'esm' ? '.mjs' : undefined,
-			dts: format === 'cjs' ? '.cts' : format === 'esm' ? '.mts' : undefined,
-		}
-	}, */
 })
