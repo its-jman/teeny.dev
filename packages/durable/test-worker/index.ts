@@ -34,7 +34,7 @@ export class AlarmTest extends DurableObject {
 			storage: state.storage,
 			payloadParser: z.object({url: z.string()}),
 			handler(ctx) {
-				if (ctx.payload.url === 'ERROR') {
+				if (ctx.payload.url === 'ERROR' && ctx.attempt <= 2) {
 					throw new Error('Expecting error')
 				}
 				this.storage.put('test', '1234')

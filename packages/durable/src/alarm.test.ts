@@ -123,4 +123,39 @@ describe('alarms', () => {
 		expect(await runDurableObjectAlarm(stub)).eq(true)
 		expect(await runDurableObjectAlarm(stub)).eq(false)
 	})
+
+	it('can handle and reschedule errors', async () => {
+		const stub = getByName(env.ALARM_TEST, 'main')
+
+		let id: string
+		let handlerSpy: MockInstance = null! // Assert since runInDurable doesn't grant assignment before usage
+		await runInDurableObject(stub, async (inst) => {
+			const am = inst._am
+			handlerSpy = vi.spyOn(am.cfg, 'handler')
+			id = await am.scheduleIn(10 * 1000, {url: 'ERROR'})
+		})
+
+		vi.setSystemTime(Date.now() + 10000)
+		expect(await runDurableObjectAlarm(stub)).eq(true)
+		expect(handlerSpy).toBeCalledTimes(1)
+
+		// Alarm handler programmed to succeed the third time
+		vi.setSystemTime(Date.now() + 60 * 1000)
+		expect(await runDurableObjectAlarm(stub)).eq(true)
+		expect(handlerSpy).toBeCalledTimes(2)
+		expect(handlerSpy.mock.calls[1]?.[0]?.attempt).toEqual(2)
+
+		// Alarm handler programmed to succeed the third time
+		vi.setSystemTime(Date.now() + 60 * 1000)
+		expect(await runDurableObjectAlarm(stub)).eq(true)
+		expect(handlerSpy).toBeCalledTimes(3)
+		expect(handlerSpy.mock.calls[2]?.[0]?.attempt).toEqual(3)
+
+		// Properly disposes of entry once it runs successfully
+		await runInDurableObject(stub, async (inst) => {
+			expect(await inst._am.cancel(id)).eq(false)
+		})
+
+		expect(await runDurableObjectAlarm(stub)).eq(false)
+	})
 })

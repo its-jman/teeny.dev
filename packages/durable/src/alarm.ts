@@ -65,7 +65,7 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 		for (const run of toRun) {
 			let hasErr
 			try {
-				run.attempt++
+				run.attempt += 1
 				await cfg.handler(run)
 			} catch (err) {
 				hasErr = true
@@ -128,11 +128,11 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 		const originalId = alarmCfg.originalId ?? id
 		await cfg.storage.put({
 			[idPrefix + id]: {
+				attempt: 0,
+				previousError: undefined,
 				...alarmCfg,
 				originalId,
 				id,
-				attempt: 0,
-				previousError: undefined,
 			} satisfies AlarmDetail<TPayload>,
 			// Create mapping of original id to current id
 			[mapPrefix + originalId]: id,
