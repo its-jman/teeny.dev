@@ -20,7 +20,7 @@ type AlarmDetail<T> = AlarmCfg<T> & {
 
 type AlarmManagerCfg<TZod extends ZodType> = {
 	payloadParser: TZod
-	handler(payload: z.infer<TZod>): Promise<void> | void
+	handler(ctx: AlarmDetail<z.infer<TZod>>): Promise<void> | void
 	storage: DurableObjectStorage
 }
 // #endregion types
@@ -66,7 +66,7 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 			let hasErr
 			try {
 				run.attempt++
-				await cfg.handler(run.payload)
+				await cfg.handler(run)
 			} catch (err) {
 				hasErr = true
 				run.previousError = err as Error
@@ -145,11 +145,13 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 	}
 
 	async function scheduleAt(at: Date, payload: TPayload) {
+		cfg.payloadParser.parse(payload)
 		const id = await scheduleAlarmAt(at.getTime(), {type: 'at', at, payload})
 		return id
 	}
 
 	async function scheduleIn(ms: number, payload: TPayload) {
+		cfg.payloadParser.parse(payload)
 		const id = await scheduleAlarmAt(Date.now() + ms, {
 			type: 'in',
 			in: ms,
@@ -159,6 +161,7 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 	}
 
 	async function scheduleEvery(ms: number, payload: TPayload) {
+		cfg.payloadParser.parse(payload)
 		const id = await scheduleAlarmAt(Date.now() + ms, {
 			type: 'every',
 			every: ms,

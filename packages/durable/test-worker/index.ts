@@ -33,7 +33,10 @@ export class AlarmTest extends DurableObject {
 		this._am = createAlarmManager({
 			storage: state.storage,
 			payloadParser: z.object({url: z.string()}),
-			handler(payload) {
+			handler(ctx) {
+				if (ctx.payload.url === 'ERROR') {
+					throw new Error('Expecting error')
+				}
 				this.storage.put('test', '1234')
 			},
 		})

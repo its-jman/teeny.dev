@@ -8,6 +8,7 @@ import {
 	expectTypeOf,
 	it,
 	vi,
+	type MockInstance,
 } from 'vitest'
 import {getByName} from './utils'
 import {decodeTime} from 'ulid-workers'
@@ -24,7 +25,7 @@ describe('alarms', () => {
 	it('can create and run alarms in order', async () => {
 		const stub = getByName(env.ALARM_TEST, 'main')
 
-		let handlerSpy
+		let handlerSpy: MockInstance = null! // Assert since runInDurable doesn't grant assignment before usage
 		await runInDurableObject(stub, async (inst) => {
 			const am = inst._am
 			handlerSpy = vi.spyOn(am.cfg, 'handler')
@@ -47,7 +48,7 @@ describe('alarms', () => {
 		vi.setSystemTime(Date.now() + 10000)
 		assert(await runDurableObjectAlarm(stub))
 		expect(handlerSpy).toBeCalledTimes(1)
-		expect(handlerSpy).toBeCalledWith({url: 'B'})
+		expect(handlerSpy.mock.calls[0]?.[0]?.payload!).toEqual({url: 'B'})
 
 		await runInDurableObject(stub, async (inst) => {
 			const am = inst._am
@@ -60,8 +61,8 @@ describe('alarms', () => {
 		vi.setSystemTime(Date.now() + 20000)
 		expect(await runDurableObjectAlarm(stub)).eq(true)
 		expect(handlerSpy).toBeCalledTimes(3)
-		expect(handlerSpy).toBeCalledWith({url: 'A'})
-		expect(handlerSpy).toBeCalledWith({url: 'C'})
+		expect(handlerSpy.mock.calls[1]?.[0]?.payload).toEqual({url: 'A'})
+		expect(handlerSpy.mock.calls[2]?.[0]?.payload).toEqual({url: 'C'})
 
 		await runInDurableObject(stub, async (inst) => {
 			expect(await inst.storage.get('test')).eq('1234')
