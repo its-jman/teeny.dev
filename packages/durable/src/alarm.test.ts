@@ -158,4 +158,16 @@ describe('alarms', () => {
 
 		expect(await runDurableObjectAlarm(stub)).eq(false)
 	})
+
+	it('will err if passed invalid payload', async () => {
+		const stub = getByName(env.ALARM_TEST, 'main')
+
+		await runInDurableObject(stub, async (inst) => {
+			const am = inst._am
+			await expect(() =>
+				// @ts-expect-error
+				am.scheduleIn(10 * 1000, {myInvalid: true})
+			).rejects.toThrowError()
+		})
+	})
 })
