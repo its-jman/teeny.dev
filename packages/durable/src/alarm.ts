@@ -4,8 +4,9 @@ import {decodeTime, ulidFactory} from 'ulid-workers'
 
 // #region types
 type ListAlarmsCfg = Pick<DurableObjectListOptions, 'start' | 'end' | 'limit'> | undefined
+type DistributiveOmit<T, K extends PropertyKey> = T extends any ? Omit<T, K> : never
 
-type AlarmCfg<T> = {payload: T} & (
+type AlarmCfg<T> = {originalId: string; payload: T} & (
 	| {type: 'at'; at: Date}
 	| {type: 'in'; in: number}
 	| {type: 'every'; every: number}
@@ -24,6 +25,7 @@ type AlarmManagerCfg<TZod extends ZodType> = {
 }
 // #endregion types
 
+const RETRY_INTERVAL = 60 * 1000
 const PREFIX = '$$_alarm'
 // WARNING: monoUlid will only ever return values greater than the highest timestamp passed to it.
 // const monoUlid = ulidFactory()
@@ -43,115 +45,40 @@ const nonMonoUlid = ulidFactory({monotonic: false})
  *
  *
  */
-
-// export class AlarmManager<TZod extends ZodType> {
-// 	constructor(public cfg: AlarmManagerCfg<TZod>) {}
-
-// 	/**
-// 	 * Alarm handler
-// 	 */
-// 	async alarmHandler(alarmInfo: AlarmInvocationInfo) {
-// 		const toRun = await this.listAlarms({
-// 			end: `${PREFIX}##${nonMonoUlid(Date.now() + 1)}`,
-// 		})
-
-// 		/**
-// 		 * Make this sync for now, maybe each run can happen in parallel?
-// 		 */
-// 		for (const run of toRun) {
-// 			try {
-// 				await this.cfg.handler(run.payload)
-// 			} catch (err) {
-// 				console.error(err)
-// 			}
-// 			await this.cfg.storage.delete(run._key)
-// 		}
-// 		await this.setNextWake()
-// 	}
-
-// 	/**
-// 	 * List Alarms
-// 	 */
-// 	async listAlarms(cfg: ListAlarmsCfg = {}) {
-// 		const prefix = `${PREFIX}##`
-// 		const alarms = await this.cfg.storage.list<AlarmDetail<z.infer<TZod>>>({
-// 			...cfg,
-// 			prefix,
-// 			start: cfg.start ? `${prefix}${cfg.start}` : prefix,
-// 		})
-// 		return [...alarms.entries()].map(([_key, alarm]) => ({...alarm, _key}))
-// 	}
-
-// 	/**
-// 	 * Get Next Alarm
-// 	 */
-// 	async getNextAlarm(): Promise<AlarmDetail<z.infer<TZod>> | undefined> {
-// 		const alarms = await this.listAlarms({limit: 1})
-// 		return alarms[0]
-// 	}
-
-// 	/**
-// 	 * Set next wake time (after alarms run, or new alarms created)
-// 	 */
-// 	async setNextWake() {
-// 		const nextAlarm = await this.getNextAlarm()
-// 		if (nextAlarm) {
-// 			const time = decodeTime(nextAlarm.id)
-// 			await this.cfg.storage.setAlarm(time)
-// 		}
-// 	}
-
-// 	/**
-// 	 *
-// 	 */
-// 	async scheduleAlarmAt(ms: number, cfg: AlarmCfg<z.infer<TZod>>) {
-// 		const id = nonMonoUlid(ms)
-// 		await this.cfg.storage.put<AlarmDetail<z.infer<TZod>>>(`${PREFIX}##${id}`, {
-// 			...cfg,
-// 			id,
-// 			attempt: 0,
-// 			previousError: undefined,
-// 		})
-// 		await this.setNextWake()
-// 		return id
-// 	}
-
-// 	async scheduleAt(at: Date, payload: z.infer<TZod>) {
-// 		const id = await this.scheduleAlarmAt(at.getTime(), {type: 'at', at, payload})
-// 		return id
-// 	}
-// 	async scheduleIn(ms: number, payload: z.infer<TZod>) {
-// 		const id = await this.scheduleAlarmAt(Date.now() + ms, {type: 'in', in: ms, payload})
-// 		return id
-// 	}
-// 	async scheduleEvery(ms: number, payload: z.infer<TZod>) {
-// 		return '1234'
-// 	}
-// 	async cancel(alarmId: string) {
-// 		return true
-// 	}
-// 	async cancelAll() {
-// 		return true
-// 	}
-// }
-
 export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZod>) {
+	type TPayload = z.infer<TZod>
+
+	const idPrefix = `${PREFIX}##alarm##`
+	const mapPrefix = `${PREFIX}##map##`
+
 	/**
 	 * Alarm handler
 	 */
 	async function alarmHandler(alarmInfo: AlarmInvocationInfo) {
 		const toRun = await listAlarms({
-			end: `${PREFIX}##${nonMonoUlid(Date.now() + 1)}`,
+			end: idPrefix + nonMonoUlid(Date.now() + 1),
 		})
 
 		/**
 		 * Make this sync for now, maybe each run can happen in parallel?
 		 */
 		for (const run of toRun) {
+			let hasErr
 			try {
+				run.attempt++
 				await cfg.handler(run.payload)
 			} catch (err) {
+				hasErr = true
+				run.previousError = err as Error
+				// Setting wake at end of loop, skip for now
+				await scheduleAlarmAt(Date.now() + RETRY_INTERVAL, run, false)
 				console.error(err)
+			}
+			if (!hasErr && run.type === 'every') {
+				run.attempt = 0
+				run.previousError = undefined
+				// Setting wake at end of loop, skip for now
+				await scheduleAlarmAt(Date.now() + run.every, run, false)
 			}
 			await cfg.storage.delete(run._key)
 		}
@@ -162,11 +89,10 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 	 * List Alarms
 	 */
 	async function listAlarms(listCfg: ListAlarmsCfg = {}) {
-		const prefix = `${PREFIX}##`
-		const alarms = await cfg.storage.list<AlarmDetail<z.infer<TZod>>>({
+		const alarms = await cfg.storage.list<AlarmDetail<TPayload>>({
 			...listCfg,
-			prefix,
-			start: listCfg.start ? `${prefix}${listCfg.start}` : prefix,
+			prefix: idPrefix,
+			start: listCfg.start ? idPrefix + listCfg.start : idPrefix,
 		})
 		return [...alarms.entries()].map(([_key, alarm]) => ({...alarm, _key}))
 	}
@@ -174,7 +100,7 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 	/**
 	 * Get Next Alarm
 	 */
-	async function getNextAlarm(): Promise<AlarmDetail<z.infer<TZod>> | undefined> {
+	async function getNextAlarm(): Promise<AlarmDetail<TPayload> | undefined> {
 		const alarms = await listAlarms({limit: 1})
 		return alarms[0]
 	}
@@ -193,24 +119,37 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 	/**
 	 * Schedule alarm at specific millisecond timestamp
 	 */
-	async function scheduleAlarmAt(ms: number, alarmCfg: AlarmCfg<z.infer<TZod>>) {
+	async function scheduleAlarmAt(
+		ms: number,
+		alarmCfg: DistributiveOmit<AlarmCfg<TPayload>, 'originalId'> & {originalId?: string},
+		setWake: boolean | undefined = true
+	) {
 		const id = nonMonoUlid(ms)
-		await cfg.storage.put<AlarmDetail<z.infer<TZod>>>(`${PREFIX}##${id}`, {
-			...alarmCfg,
-			id,
-			attempt: 0,
-			previousError: undefined,
+		const originalId = alarmCfg.originalId ?? id
+		await cfg.storage.put({
+			[idPrefix + id]: {
+				...alarmCfg,
+				originalId,
+				id,
+				attempt: 0,
+				previousError: undefined,
+			} satisfies AlarmDetail<TPayload>,
+			// Create mapping of original id to current id
+			[mapPrefix + originalId]: id,
 		})
-		await setNextWake()
+
+		if (setWake) {
+			await setNextWake()
+		}
 		return id
 	}
 
-	async function scheduleAt(at: Date, payload: z.infer<TZod>) {
+	async function scheduleAt(at: Date, payload: TPayload) {
 		const id = await scheduleAlarmAt(at.getTime(), {type: 'at', at, payload})
 		return id
 	}
 
-	async function scheduleIn(ms: number, payload: z.infer<TZod>) {
+	async function scheduleIn(ms: number, payload: TPayload) {
 		const id = await scheduleAlarmAt(Date.now() + ms, {
 			type: 'in',
 			in: ms,
@@ -219,16 +158,19 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 		return id
 	}
 
-	async function scheduleEvery(ms: number, payload: z.infer<TZod>) {
-		return '1234'
+	async function scheduleEvery(ms: number, payload: TPayload) {
+		const id = await scheduleAlarmAt(Date.now() + ms, {
+			type: 'every',
+			every: ms,
+			payload,
+		})
+		return id
 	}
 
 	async function cancel(alarmId: string) {
-		return true
-	}
-
-	async function cancelAll() {
-		return true
+		const curr = await cfg.storage.get<string>(mapPrefix + alarmId)
+		const res = await cfg.storage.delete([alarmId, idPrefix + alarmId, idPrefix + curr])
+		return res > 0
 	}
 
 	return {
@@ -237,11 +179,9 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 		listAlarms,
 		getNextAlarm,
 		setNextWake,
-		scheduleAlarmAt,
 		scheduleAt,
 		scheduleIn,
 		scheduleEvery,
 		cancel,
-		cancelAll,
 	}
 }

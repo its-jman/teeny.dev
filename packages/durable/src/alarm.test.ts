@@ -9,13 +9,8 @@ import {
 	it,
 	vi,
 } from 'vitest'
-import {z} from 'zod'
-import dayjs from 'dayjs'
 import {getByName} from './utils'
 import {decodeTime} from 'ulid-workers'
-
-const undef = z.undefined()
-const complex = z.object({url: z.string()})
 
 describe('alarms', () => {
 	beforeEach(() => {
@@ -26,12 +21,7 @@ describe('alarms', () => {
 		vi.restoreAllMocks()
 	})
 
-	it('can actually call arrow fn', () => {
-		const stub = env.ALARM_TEST.get(env.ALARM_TEST.idFromName('main'))
-		stub.storage
-	})
-
-	it("describes it's calling object", async () => {
+	it('can create and run alarms in order', async () => {
 		const stub = getByName(env.ALARM_TEST, 'main')
 
 		let handlerSpy
@@ -80,14 +70,56 @@ describe('alarms', () => {
 		expect(await runDurableObjectAlarm(stub)).eq(false)
 	})
 
-	// am.listAlarms()
+	it("can cancel alarms, and knows when it didn't cancel", async () => {
+		const stub = getByName(env.ALARM_TEST, 'main')
 
-	/* am.simple.scheduleAt(dayjs().toDate(), undefined)
-			am.simple.scheduleIn(60 * 1000, undefined)
-			am.simple.scheduleEvery(60 * 1000, undefined)
+		await runInDurableObject(stub, async (inst) => {
+			const am = inst._am
 
-			am.simple.cancel('1234')
-			am.simple.cancelAll()
+			expect(await am.cancel('1234')).eq(false)
+			const id1 = await am.scheduleIn(15 * 1000, {url: 'A'})
+			const id2 = await am.scheduleEvery(10 * 1000, {url: 'B'})
 
-			am.complex.scheduleIn(1, {url: '1234'}) */
+			expect(await am.cancel(id1)).eq(true)
+			expect(await am.cancel(id1)).eq(false)
+			expect(await am.cancel(id2)).eq(true)
+			expect(await am.cancel(id2)).eq(false)
+			expect(await am.cancel(id1)).eq(false)
+		})
+		expect(await runDurableObjectAlarm(stub)).eq(true)
+		expect(await runDurableObjectAlarm(stub)).eq(false)
+	})
+
+	it('can schedule AND CANCEL recurring alarms', async () => {
+		const stub = getByName(env.ALARM_TEST, 'main')
+
+		let id: string
+		let handlerSpy
+		await runInDurableObject(stub, async (inst) => {
+			const am = inst._am
+			handlerSpy = vi.spyOn(am.cfg, 'handler')
+			id = await am.scheduleEvery(10 * 1000, {url: '1234'})
+
+			expect(await inst.storage.getAlarm()).eq(decodeTime(id))
+		})
+
+		vi.setSystemTime(Date.now() + 10000)
+		expect(await runDurableObjectAlarm(stub)).eq(true)
+		expect(handlerSpy).toBeCalledTimes(1)
+
+		// Has not be called, the next iter should be 10_000, not just 5_000
+		vi.setSystemTime(Date.now() + 5000)
+		expect(await runDurableObjectAlarm(stub)).eq(true)
+		expect(handlerSpy).toBeCalledTimes(1)
+		vi.setSystemTime(Date.now() + 5000)
+		expect(await runDurableObjectAlarm(stub)).eq(true)
+		expect(handlerSpy).toBeCalledTimes(2)
+
+		await runInDurableObject(stub, async (inst) => {
+			expect(await inst._am.cancel(id)).eq(true)
+		})
+
+		expect(await runDurableObjectAlarm(stub)).eq(true)
+		expect(await runDurableObjectAlarm(stub)).eq(false)
+	})
 })
