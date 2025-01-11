@@ -1,9 +1,10 @@
 import {env, runInDurableObject} from 'cloudflare:test'
 import {describe, expect, expectTypeOf, it} from 'vitest'
+import {getByName} from './utils'
 
 describe('storage', () => {
 	it('stores stuff', async () => {
-		const stub = env.STORAGE_TEST.get(env.STORAGE_TEST.idFromName('main'))
+		const stub = getByName(env.STORAGE_TEST, 'main')
 
 		await runInDurableObject(stub, async (inst) => {
 			let one = await inst.storage.one.get('')

@@ -4,7 +4,7 @@
 	"type": "module",
 	"sideEffects": false,
 	"scripts": {
-		"wrangler:types": "wrangler types -c test-worker/wrangler.json",
+		"gen:wrangler": "wrangler types -c test-worker/wrangler.json",
 		"build": "tsup",
 		"test:types": "tsc",
 		"test:vitest": "vitest",
@@ -50,5 +50,8 @@
 		"@cloudflare/workers-types": "^4.20230717.0",
 		"@trpc/client": "^10.35.0",
 		"@trpc/server": "^10.35.0"
+	},
+	"dependencies": {
+		"ulid-workers": "^2.1.0"
 	}
 }

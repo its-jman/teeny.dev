@@ -91,7 +91,7 @@ export function createTypedStorage<TCfg extends TypedStorageCfg>(
 	const typedStorage: Partial<TypedStorageInterface<TCfg>> = {}
 
 	for (const prefix in cfg) {
-		typedStorage[prefix] = createTypedStorageItem(storage, prefix, cfg[prefix])
+		typedStorage[prefix] = createTypedStorageItem(storage, prefix, cfg[prefix]!)
 	}
 
 	// Assertion because idk how to do this in typescript...

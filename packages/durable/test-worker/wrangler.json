@@ -8,8 +8,12 @@
 			{
 				"name": "STORAGE_TEST",
 				"class_name": "StorageTest"
+			},
+			{
+				"name": "ALARM_TEST",
+				"class_name": "AlarmTest"
 			}
 		]
 	},
-	"migrations": [{"tag": "v1", "new_classes": ["StorageTest"]}]
+	"migrations": [{"tag": "v1", "new_classes": ["StorageTest", "AlarmTest"]}]
 }
