@@ -1,5 +1,4 @@
-import {z, type TypeOf, type ZodType} from 'zod'
-import {createTypedStorage} from './storage'
+import {z, type ZodType} from 'zod'
 import {decodeTime, ulidFactory} from 'ulid-workers'
 
 // #region types
