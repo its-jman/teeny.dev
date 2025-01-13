@@ -8,8 +8,8 @@
 		"build": "tsup",
 		"test:types": "tsc",
 		"test:vitest": "vitest",
-		"test": "npm run test:types && npm run test:vitest",
-		"release": "release-it"
+		"test": "npm run test:types && npm run test:vitest -- --run",
+		"release": "npm run build && npm run test && release-it"
 	},
 	"exports": {
 		".": "./dist/index.js"
@@ -22,10 +22,6 @@
 	],
 	"prettier": "@jman.dev/prettier-config",
 	"release-it": {
-		"pkgFiles": [
-			"package.json",
-			"package-lock.json"
-		],
 		"git": {
 			"commitMessage": "teeny-durable@${version}",
 			"tagName": "teeny-durable@${version}"
