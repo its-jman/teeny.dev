@@ -1,7 +1,7 @@
 import {DurableObject, type WorkerEntrypoint} from 'cloudflare:workers'
 import {createTypedStorage} from '../src/storage'
 import {z} from 'zod'
-import {createAlarmManager} from '../src/alarm'
+import {createAlarmManager, type AlarmManager} from '../src/alarm'
 
 const OneItemSchema = z.object({url: z.string()})
 const ManyItemSchema = z.object({
@@ -23,16 +23,17 @@ export class StorageTest extends DurableObject {
 	}
 }
 
+const AlarmSchema = z.object({url: z.string()})
 export class AlarmTest extends DurableObject {
-	_am
+	alarm: AlarmManager<typeof AlarmSchema>
 	storage
 
-	constructor(state: DurableObjectState, env: Env) {
-		super(state, env)
-		this.storage = state.storage
-		this._am = createAlarmManager({
-			storage: state.storage,
-			payloadParser: z.object({url: z.string()}),
+	constructor(ctx: DurableObjectState, env: Env) {
+		super(ctx, env)
+		this.storage = ctx.storage
+		this.alarm = createAlarmManager({
+			storage: ctx.storage,
+			payloadParser: AlarmSchema,
 			handler(ctx) {
 				if (ctx.payload.url === 'ERROR' && ctx.attempt <= 2) {
 					throw new Error('Expecting error')
@@ -40,7 +41,6 @@ export class AlarmTest extends DurableObject {
 				this.storage.put('test', '1234')
 			},
 		})
-		this.alarm = this._am.alarmHandler
 	}
 }
 

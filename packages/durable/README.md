@@ -58,25 +58,22 @@ The `createAlarmManager` function helps you manage alarms within your Durable Ob
 import {createAlarmManager} from '@teeny.dev/durable'
 import {z} from 'zod'
 
+const AlarmSchema = z.object({url: z.string()})
 class FeedStorage extends DurableObject {
-	am
+	alarm: AlarmManager<typeof AlarmSchema>
 
 	constructor(state: DurableObjectState, env: Env) {
 		super(state, env)
-		this.am = createAlarmManager({
+		this.alarm = createAlarmManager({
 			storage: state.storage,
-			payloadParser: z.object({url: z.string()}),
-			async handler(ctx) {
-				// ...
-			},
+			payloadParser: AlarmSchema,
+			async handler(ctx) {},
 		})
-		// EXTREMELY IMPORTANT - This is what routes alarms to the alarm manager.
-		this.alarm = this.am.alarmHandler
 	}
 
 	// Usage:
 	createFeedSubscription(feedUrl: string) {
-		await this.am.scheduleEvery(24 * 60 * 60 * 1000, {url: feedUrl})
+		await this.alarm.scheduleEvery(24 * 60 * 60 * 1000, {url: feedUrl})
 	}
 }
 ```

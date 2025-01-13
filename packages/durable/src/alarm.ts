@@ -2,6 +2,16 @@ import {z, type ZodType} from 'zod'
 import {decodeTime, ulidFactory} from 'ulid-workers'
 
 // #region types
+export type AlarmManager<TZod extends ZodType> = {
+	(alarmInfo: AlarmInvocationInfo): void | Promise<void>
+	cfg: AlarmManagerCfg<TZod>
+	listAlarms: (listCfg?: ListAlarmsCfg) => Promise<Array<AlarmDetail<z.infer<TZod>>>>
+	getNextAlarm: () => Promise<AlarmDetail<z.infer<TZod>> | undefined>
+	scheduleAt: (at: Date, payload: z.infer<TZod>) => Promise<string>
+	scheduleIn: (ms: number, payload: z.infer<TZod>) => Promise<string>
+	scheduleEvery: (every: number, payload: z.infer<TZod>) => Promise<string>
+	cancel: (alarmId: string) => Promise<boolean>
+}
 type ListAlarmsCfg = Pick<DurableObjectListOptions, 'start' | 'end' | 'limit'> | undefined
 type DistributiveOmit<T, K extends PropertyKey> = T extends any ? Omit<T, K> : never
 
@@ -44,7 +54,9 @@ const nonMonoUlid = ulidFactory({monotonic: false})
  *
  *
  */
-export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZod>) {
+export function createAlarmManager<TZod extends ZodType>(
+	cfg: AlarmManagerCfg<TZod>
+): AlarmManager<TZod> {
 	type TPayload = z.infer<TZod>
 
 	const idPrefix = `${PREFIX}##alarm##`
@@ -175,15 +187,13 @@ export function createAlarmManager<TZod extends ZodType>(cfg: AlarmManagerCfg<TZ
 		return res > 0
 	}
 
-	return {
+	return Object.assign(alarmHandler, {
 		cfg,
-		alarmHandler,
 		listAlarms,
 		getNextAlarm,
-		setNextWake,
 		scheduleAt,
 		scheduleIn,
 		scheduleEvery,
 		cancel,
-	}
+	})
 }

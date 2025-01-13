@@ -27,7 +27,7 @@ describe('alarms', () => {
 
 		let handlerSpy: MockInstance = null! // Assert since runInDurable doesn't grant assignment before usage
 		await runInDurableObject(stub, async (inst) => {
-			const am = inst._am
+			const am = inst.alarm
 			handlerSpy = vi.spyOn(am.cfg, 'handler')
 
 			let nextAlarm = await am.getNextAlarm()
@@ -51,7 +51,7 @@ describe('alarms', () => {
 		expect(handlerSpy.mock.calls[0]?.[0]?.payload!).toEqual({url: 'B'})
 
 		await runInDurableObject(stub, async (inst) => {
-			const am = inst._am
+			const am = inst.alarm
 			let nextAlarm = await am.getNextAlarm()
 			assert(nextAlarm)
 			assert(nextAlarm.type === 'in')
@@ -66,7 +66,7 @@ describe('alarms', () => {
 
 		await runInDurableObject(stub, async (inst) => {
 			expect(await inst.storage.get('test')).eq('1234')
-			expect(await inst._am.getNextAlarm()).toBeUndefined()
+			expect(await inst.alarm.getNextAlarm()).toBeUndefined()
 		})
 		expect(await runDurableObjectAlarm(stub)).eq(false)
 	})
@@ -75,7 +75,7 @@ describe('alarms', () => {
 		const stub = getByName(env.ALARM_TEST, 'main')
 
 		await runInDurableObject(stub, async (inst) => {
-			const am = inst._am
+			const am = inst.alarm
 
 			expect(await am.cancel('1234')).eq(false)
 			const id1 = await am.scheduleIn(15 * 1000, {url: 'A'})
@@ -97,7 +97,7 @@ describe('alarms', () => {
 		let id: string
 		let handlerSpy
 		await runInDurableObject(stub, async (inst) => {
-			const am = inst._am
+			const am = inst.alarm
 			handlerSpy = vi.spyOn(am.cfg, 'handler')
 			id = await am.scheduleEvery(10 * 1000, {url: '1234'})
 
@@ -117,7 +117,7 @@ describe('alarms', () => {
 		expect(handlerSpy).toBeCalledTimes(2)
 
 		await runInDurableObject(stub, async (inst) => {
-			expect(await inst._am.cancel(id)).eq(true)
+			expect(await inst.alarm.cancel(id)).eq(true)
 		})
 
 		expect(await runDurableObjectAlarm(stub)).eq(true)
@@ -130,7 +130,7 @@ describe('alarms', () => {
 		let id: string
 		let handlerSpy: MockInstance = null! // Assert since runInDurable doesn't grant assignment before usage
 		await runInDurableObject(stub, async (inst) => {
-			const am = inst._am
+			const am = inst.alarm
 			handlerSpy = vi.spyOn(am.cfg, 'handler')
 			id = await am.scheduleIn(10 * 1000, {url: 'ERROR'})
 		})
@@ -153,7 +153,7 @@ describe('alarms', () => {
 
 		// Properly disposes of entry once it runs successfully
 		await runInDurableObject(stub, async (inst) => {
-			expect(await inst._am.cancel(id)).eq(false)
+			expect(await inst.alarm.cancel(id)).eq(false)
 		})
 
 		expect(await runDurableObjectAlarm(stub)).eq(false)
@@ -163,7 +163,7 @@ describe('alarms', () => {
 		const stub = getByName(env.ALARM_TEST, 'main')
 
 		await runInDurableObject(stub, async (inst) => {
-			const am = inst._am
+			const am = inst.alarm
 			await expect(() =>
 				// @ts-expect-error
 				am.scheduleIn(10 * 1000, {myInvalid: true})
