@@ -22,6 +22,10 @@
 	],
 	"prettier": "@jman.dev/prettier-config",
 	"release-it": {
+		"pkgFiles": [
+			"package.json",
+			"package-lock.json"
+		],
 		"git": {
 			"commitMessage": "teeny-durable@${version}",
 			"tagName": "teeny-durable@${version}"
