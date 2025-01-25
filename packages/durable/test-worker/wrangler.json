@@ -12,8 +12,14 @@
 			{
 				"name": "ALARM_TEST",
 				"class_name": "AlarmTest"
+			},
+			{
+				"name": "SQL_TEST",
+				"class_name": "SqlTest"
 			}
 		]
 	},
-	"migrations": [{"tag": "v1", "new_classes": ["StorageTest", "AlarmTest"]}]
+	"migrations": [
+		{"tag": "v1", "new_sqlite_classes": ["StorageTest", "AlarmTest", "SqlTest"]}
+	]
 }

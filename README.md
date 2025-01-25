@@ -4,7 +4,3 @@
 
 - Docs site hosted at teeny.dev
 - Do I really have goals for teeny.dev in current stage? Instead, should I focus effort on building up individual apps like digester or utilitydeck?
-
-### Patches
-
-- These SHOULD only exist for dev-only tweaks. DO NOT depend on clients running these patches.

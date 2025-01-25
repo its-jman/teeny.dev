@@ -3,4 +3,5 @@
 interface Env {
 	STORAGE_TEST: DurableObjectNamespace<import("./test-worker/index").StorageTest>;
 	ALARM_TEST: DurableObjectNamespace<import("./test-worker/index").AlarmTest>;
+	SQL_TEST: DurableObjectNamespace<import("./test-worker/index").SqlTest>;
 }

@@ -5,15 +5,12 @@
 		"packages/*"
 	],
 	"prettier": "@jman.dev/prettier-config",
-	"scripts": {
-		"postinstall": "patch-package"
-	},
+	"scripts": {},
 	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.5.41",
+		"@jman.dev/prettier-config": "^0.1.8",
 		"@tsconfig/node18": "^18.2.4",
 		"@tsconfig/recommended": "^1.0.8",
 		"@tsconfig/strictest": "^2.0.5",
-		"release-it": "^18.0.0",
-		"@jman.dev/prettier-config": "^0.1.8"
+		"release-it": "^18.1.1"
 	}
 }
