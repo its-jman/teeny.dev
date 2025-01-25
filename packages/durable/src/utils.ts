@@ -14,21 +14,15 @@ export function getById<T extends Rpc.DurableObjectBranded | undefined>(
 	return ns.get(ns.idFromString(id))
 }
 
-type MapValues<T, U> = {
-	[K in keyof T]: U
-}
-
-export function mapObject<T extends object, U>(
+export function mapObject<T, U>(
 	obj: T,
-	fn: (value: T[keyof T], key: keyof T) => U
-): MapValues<T, U> {
-	const result = {} as MapValues<T, U>
-
+	callback: (value: T[keyof T], key: keyof T) => U
+): {[K in keyof T]: U} {
+	const result: Partial<{[K in keyof T]: U}> = {}
 	for (const key in obj) {
 		if (Object.prototype.hasOwnProperty.call(obj, key)) {
-			result[key] = fn(obj[key], key)
+			result[key] = callback(obj[key], key)
 		}
 	}
-
-	return result
+	return result as {[K in keyof T]: U}
 }

@@ -9,13 +9,20 @@ export type Migration =
 			commands: Array<string>
 	  }
 
+export type Stmt<T, TArgs extends Array<any> | undefined> = {
+	command: string
+	__args: TArgs
+	__resp: T
+}
+type StmtFn<T extends Stmt<any, any>> = (...args: T['__args']) => T['__resp']
+
 export type PrepareSqlCfg<T> = {
-	// migrations: Array<Migration>
 	migrations?: {[K: string]: Migration}
-	statements?: {[K in keyof T]: string}
+	statements?: {[A in keyof T]: string | Stmt<any, Array<any>>}
 }
 // #endregion
 
+// #region migrations
 // async function hashMessage(message: string) {
 // 	const msgUint8 = new TextEncoder().encode(message) // encode as (utf-8) Uint8Array
 // 	const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8) // hash the message
@@ -129,11 +136,54 @@ function initalizeMigrationsTable(ctx: DurableObjectState) {
 		},
 	})
 }
+// #endregion migrations
+
+// #region statements
+
+export function stmt<
+	T extends Record<string, SqlStorageValue>,
+	TArgs extends Array<any> = []
+>(command: string): Stmt<T, TArgs> {
+	return {
+		command,
+		__resp: undefined as unknown as T,
+		__args: undefined as unknown as TArgs,
+	}
+}
+
+type StmtFnVal<T extends string | Stmt<any, any>> = T extends Stmt<any, any>
+	? (...args: T['__args']) => SqlStorageCursor<T['__resp']>
+	: () => SqlStorageCursor<Record<string, string>>
+
+function mapStatements<T extends {[K in keyof T]: string | Stmt<any, any>}>(
+	ctx: DurableObjectState,
+	stmts: T
+): {
+	[K in keyof T]: StmtFnVal<T[K]>
+} {
+	// @ts-expect-error not sure how to properly type
+	return mapObject(stmts, (stmt) => {
+		if (typeof stmt === 'string') {
+			return () => ctx.storage.sql.exec(stmt)
+		} else {
+			return (...args: typeof stmt.__args) =>
+				ctx.storage.sql.exec<typeof stmt.__resp>(stmt.command, ...args)
+		}
+	})
+}
+
+// #endregion statements
 
 /**
  * https://www.tldraw.com/ro/p5gCE_QTJo9CrCgx2n50I?d=v40.60.1647.913.page
  */
-export function prepareSqlite<T>(ctx: DurableObjectState, cfg: PrepareSqlCfg<T>) {
+export function prepareSqlite<T extends {[K in keyof T]: string | Stmt<any, any>}>(
+	ctx: DurableObjectState,
+	cfg: {
+		migrations?: Record<string, Migration>
+		statements?: T
+	}
+) {
 	const sql = ctx.storage.sql
 
 	if (cfg.migrations) {
@@ -141,32 +191,5 @@ export function prepareSqlite<T>(ctx: DurableObjectState, cfg: PrepareSqlCfg<T>)
 		runMigrations('user', ctx, cfg.migrations)
 	}
 
-	if (cfg.statements) {
-		// return (...args) => sql.exec(str, ...args)
-	}
-
-	return sql
+	return Object.assign(sql, mapStatements(ctx, cfg.statements))
 }
-
-export type Stmt<T, TArgs extends Array<any> | undefined> = string & {
-	__genericArgs: TArgs
-	__genericResp: T
-}
-export function stmt<T, TArgs extends Array<any> = []>(command: string): Stmt<T, TArgs> {
-	return Object.assign(command, {
-		__genericResp: undefined as T,
-		__genericArgs: undefined as unknown as TArgs,
-	})
-}
-type StmtFn<T extends Stmt<any, any>> = (
-	...args: T['__genericArgs']
-) => T['__genericResp']
-
-const a = stmt<number>('abc')
-const b = stmt<number, [string, number]>('abc')
-
-// const asdf = undefined as unknown as StmtFn<typeof a>
-// const asdf2 = undefined as unknown as StmtFn<typeof b>
-
-// const m = () => asdf()
-// const m2 = () => asdf2('1', 2)

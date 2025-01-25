@@ -4,9 +4,9 @@ import {
 	runInDurableObject,
 	waitOnExecutionContext,
 } from 'cloudflare:test'
-import {describe, expect, it} from 'vitest'
+import {describe, expect, expectTypeOf, it} from 'vitest'
 import {getByName} from './utils'
-import {prepareSqlite, type Migration} from './sql'
+import {prepareSqlite, stmt, type Migration} from './sql'
 
 const BASIC_CONFIG: {[K: string]: Migration} = {
 	seal: {
@@ -56,10 +56,7 @@ describe('sql - migrations', () => {
 			prepareSqlite(inst.ctx, {migrations: {}})
 
 			const columns = inst.ctx.storage.sql
-				// @ts-expect-error -- Improper generic limitation on library code
-				.exec<Record<string, {name: string; type: string}>>(
-					"pragma table_info('__teeny_migrations')"
-				)
+				.exec<{name: string; type: string}>("pragma table_info('__teeny_migrations')")
 				.toArray()
 
 			expect(columns[0]).toHaveProperty('name', 'id')
@@ -208,5 +205,45 @@ describe('sql - migrations', () => {
  * 	- Works properly with / without parameters
  */
 describe('sql - statements', () => {
-	it('', async () => {})
+	it('types properly, and queries expected values', async () => {
+		const stub = getByName(env.SQL_TEST, 'main')
+
+		await runInDurableObject(stub, async (inst) => {
+			const sql = prepareSqlite(inst.ctx, {
+				migrations: {
+					init: [
+						'CREATE TABLE pasta (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, key TEXT)',
+						'INSERT INTO pasta (name, key) VALUES ("abc", "xyz"), ("cde", "wxy"), ("def", "vwx"), ("efg", "uvw")',
+					],
+				},
+				statements: {
+					plainOle: 'SELECT * FROM pasta',
+					simpleReturn: stmt<{'count(*)': number}>('SELECT count(*) FROM pasta'),
+					complexArgs: stmt<Record<string, string>, [number, string]>(
+						'SELECT * FROM pasta WHERE id = ? AND name = ?'
+					),
+				},
+			})
+
+			const plain = sql.plainOle().toArray()
+			expect(plain).toHaveLength(4)
+
+			const simple = sql.simpleReturn().one()
+			expect(simple['count(*)']).eq(4)
+
+			const complex = sql.complexArgs(3, 'def').one()
+			expect(complex).toBeTruthy()
+			expect(complex.key).eq('vwx')
+
+			expectTypeOf(sql.plainOle).toEqualTypeOf<
+				() => SqlStorageCursor<Record<string, string>>
+			>()
+			expectTypeOf(sql.simpleReturn).toEqualTypeOf<
+				() => SqlStorageCursor<{'count(*)': number}>
+			>()
+			expectTypeOf(sql.complexArgs).toEqualTypeOf<
+				(a: number, b: string) => SqlStorageCursor<Record<string, string>>
+			>()
+		})
+	})
 })
