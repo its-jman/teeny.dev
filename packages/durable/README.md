@@ -78,6 +78,70 @@ class FeedStorage extends DurableObject {
 }
 ```
 
+### SQL Migrations
+
+The `prepareSqlite` utility allows you to manage SQL migrations and add typing to statements within your Durable Object.
+
+```ts
+import {prepareSqlite} from '@teeny.dev/durable'
+
+class FeedStorage extends DurableObject {
+	sql
+	constructor(ctx: DurableObjectState, env: Env) {
+		super(ctx, env)
+		this.sql = prepareSqlite(inst.ctx, {
+			migrations: {
+				['001_initalize']: [
+					'CREATE TABLE pasta (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)',
+					'INSERT INTO pasta (name, key) VALUES ("spaghetti"), ("fettuccine")',
+				],
+				['002_add_tastyness']: {
+					description: 'Add tastyness column and insert more recommendations',
+					commands: [
+						'ALTER TABLE pasta ADD tastyness INTEGER NOT NULL DEFAULT -1',
+						'INSERT INTO pasta (name, tastyness) VALUES ("angel hair", 7)',
+					],
+				},
+			},
+			statements: {
+				getAllPasta: 'SELECT * FROM pasta',
+				getPastaCount: stmt<{'count(*)': number}>('SELECT count(*) FROM pasta'),
+				getPastaByNameAndTastyness: stmt<
+					{name: string; tastyness: number},
+					[number, string]
+				>('SELECT * FROM pasta WHERE tastyness = ? AND name = ?'),
+			},
+		})
+	}
+
+	findPasta(args: {name: string; tastyness: number}) {
+		return this.sql.getPastaByNameAndTastyness(args.tastyness, args.name)
+	}
+}
+```
+
+### SQL Statements
+
+The `prepareSqlite` utility also allows you to execute SQL statements within your Durable Object.
+
+```ts
+import {prepareSqlite} from '@teeny.dev/durable'
+
+class FeedStorage extends DurableObject {
+	constructor(state: DurableObjectState, env: Env) {
+		super(state, env)
+		prepareSqlite(state.storage)
+	}
+
+	async getUserById(userId: string) {
+		const result = await this.storage.execute(`SELECT * FROM users WHERE id = ?`, [
+			userId,
+		])
+		return result
+	}
+}
+```
+
 ## Internal
 
 ### Testing
