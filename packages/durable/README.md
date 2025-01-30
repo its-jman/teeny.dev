@@ -78,7 +78,7 @@ class FeedStorage extends DurableObject {
 }
 ```
 
-### SQL Migrations
+### SQL Migrations and Statements
 
 The `prepareSqlite` utility allows you to manage SQL migrations and add typing to statements within your Durable Object.
 
@@ -116,28 +116,6 @@ class FeedStorage extends DurableObject {
 
 	findPasta(args: {name: string; tastyness: number}) {
 		return this.sql.getPastaByNameAndTastyness(args.tastyness, args.name)
-	}
-}
-```
-
-### SQL Statements
-
-The `prepareSqlite` utility also allows you to execute SQL statements within your Durable Object.
-
-```ts
-import {prepareSqlite} from '@teeny.dev/durable'
-
-class FeedStorage extends DurableObject {
-	constructor(state: DurableObjectState, env: Env) {
-		super(state, env)
-		prepareSqlite(state.storage)
-	}
-
-	async getUserById(userId: string) {
-		const result = await this.storage.execute(`SELECT * FROM users WHERE id = ?`, [
-			userId,
-		])
-		return result
 	}
 }
 ```

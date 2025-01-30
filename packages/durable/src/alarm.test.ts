@@ -159,6 +159,12 @@ describe('alarms', () => {
 		expect(await runDurableObjectAlarm(stub)).eq(false)
 	})
 
+	/* it("will cancel an alarm if it's execution fails `n` times", async () => {
+		// Replace storage with SQL? No, all users might not be migrated to it.
+		// Build alternative version with SQL backend? Sure?? Not high priority
+		expect(false).eq(true)
+	}) */
+
 	it('will err if passed invalid payload', async () => {
 		const stub = getByName(env.ALARM_TEST, 'main')
 
