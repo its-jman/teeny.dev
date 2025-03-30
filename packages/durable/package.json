@@ -32,20 +32,18 @@
 		}
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20250109.0",
+		"@cloudflare/vitest-pool-workers": "^0.6.9",
+		"@cloudflare/workers-types": "^4.20250129.0",
 		"@jman.dev/prettier-config": "^0.1.8",
-		"tsup": "^8.3.5",
+		"tsup": "^8.3.6",
 		"typescript": "^5.7.3",
-		"vitest": "2.1.x",
-		"wrangler": "^3.103.1",
-		"zod": "^3.24.1",
-		"@cloudflare/vitest-pool-workers": "^0.6.3"
+		"vitest": "^2.1.8",
+		"wrangler": "^3.107.0",
+		"zod": "^3.24.1"
 	},
 	"peerDependencies": {
-		"zod": "^3.24.1",
 		"@cloudflare/workers-types": "^4.20230717.0",
-		"@trpc/client": "^10.35.0",
-		"@trpc/server": "^10.35.0"
+		"zod": "^3.24.1"
 	},
 	"dependencies": {
 		"superjson": "^2.2.2",
