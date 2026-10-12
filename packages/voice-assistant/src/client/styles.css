@@ -1,0 +1,140 @@
+:root {
+	--bg: #fafafa;
+	--fg: #1a1a1a;
+	--muted: #6b6b6b;
+	--border: #ddd;
+	--card: #fff;
+	--accent: #f6821f;
+	--error: #c62828;
+	font-family: system-ui, sans-serif;
+	color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #111;
+		--fg: #eee;
+		--muted: #999;
+		--border: #333;
+		--card: #1b1b1b;
+		--error: #ef5350;
+	}
+}
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--fg);
+}
+main {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 16px;
+}
+header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 16px;
+}
+h1 {
+	font-size: 1.3rem;
+	margin: 0;
+}
+nav {
+	display: flex;
+	gap: 4px;
+}
+button,
+select,
+input {
+	font: inherit;
+	padding: 6px 10px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--card);
+	color: inherit;
+}
+button.active,
+button[type='submit'] {
+	border-color: var(--accent);
+}
+button.recording {
+	background: var(--error);
+	color: #fff;
+}
+.token {
+	margin-left: auto;
+}
+.row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 12px 0;
+}
+.grow {
+	flex: 1;
+	min-width: 200px;
+}
+.cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+	gap: 12px;
+}
+.card {
+	background: var(--card);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	padding: 12px;
+	overflow: hidden;
+}
+.card h3 {
+	margin: 0 0 8px;
+	font-size: 1rem;
+}
+.card dl {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 2px 12px;
+	font-size: 0.85rem;
+}
+.card dt {
+	color: var(--muted);
+}
+.card dd {
+	margin: 0;
+}
+.calls {
+	padding-left: 16px;
+	font-size: 0.85rem;
+	word-break: break-word;
+}
+pre {
+	font-size: 0.75rem;
+	overflow-x: auto;
+}
+.muted {
+	color: var(--muted);
+}
+.error {
+	color: var(--error);
+}
+table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.85rem;
+	display: block;
+	overflow-x: auto;
+}
+th,
+td {
+	text-align: left;
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--border);
+}
+fieldset {
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	margin: 12px 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+}

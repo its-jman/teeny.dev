@@ -1,0 +1,12 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"composite": true,
+		"emitDeclarationOnly": true,
+		"noEmit": false,
+		"outDir": "node_modules/.tmp/worker",
+		"lib": ["esnext"],
+		"types": ["./worker-configuration.d.ts"]
+	},
+	"include": ["src/worker", "src/shared", "worker-configuration.d.ts"]
+}
