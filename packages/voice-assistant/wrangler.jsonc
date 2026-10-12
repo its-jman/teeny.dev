@@ -1,0 +1,25 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "voice-assistant",
+	"main": "src/worker/index.ts",
+	"compatibility_date": "2026-10-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"observability": {"enabled": true},
+	"assets": {
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/rpc", "/api/*", "/mcp"],
+	},
+	"ai": {"binding": "AI"},
+	// Sandbox for Code Mode: each LLM-written snippet runs in its own isolate.
+	"worker_loaders": [{"binding": "LOADER"}],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "voice-assistant",
+			"database_id": "00000000-0000-0000-0000-000000000000",
+			"migrations_dir": "migrations",
+		},
+	],
+	// Optional secrets for non-Workers-AI models (`wrangler secret put` / .dev.vars):
+	// ANTHROPIC_API_KEY, OPENAI_API_KEY, API_TOKEN (bearer token required by /rpc, /api, /mcp when set)
+}

@@ -1,0 +1,44 @@
+{
+	"name": "@teeny.dev/voice-assistant",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "npm run build && vite preview",
+		"deploy": "npm run build && wrangler deploy",
+		"gen": "wrangler types",
+		"db:migrate:local": "wrangler d1 migrations apply voice-assistant --local",
+		"db:migrate": "wrangler d1 migrations apply voice-assistant --remote",
+		"test:types": "tsc -b",
+		"test:vitest": "vitest",
+		"test": "npm run test:types && npm run test:vitest -- --run"
+	},
+	"prettier": "@jman.dev/prettier-config",
+	"dependencies": {
+		"@ai-sdk/anthropic": "^4.0.78",
+		"@ai-sdk/openai": "^4.0.91",
+		"@cloudflare/codemode": "^0.5.3",
+		"@modelcontextprotocol/sdk": "^1.32.1",
+		"@tanstack/react-query": "^5.104.2",
+		"ai": "^7.0.137",
+		"capnweb": "^0.12.0",
+		"hono": "^4.13.13",
+		"react": "^19.3.0",
+		"react-dom": "^19.3.0",
+		"workers-ai-provider": "^4.0.0",
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@cloudflare/vite-plugin": "^1.63.1",
+		"@cloudflare/workers-types": "^5.20261012.1",
+		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
+		"@vitejs/plugin-react": "^6.1.2",
+		"typescript": "^7.0.2",
+		"vite": "^8.3.4",
+		"vitest": "^5.0.4",
+		"wrangler": "^4.149.0"
+	}
+}
